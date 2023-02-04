@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { CoursesModule } from './courses/courses.module';
+import { Course } from './courses/entities/course.entity';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { CoursesModule } from './courses/courses.module';
       username: 'curso',
       password: 'docker',
       database: 'postgres',
-      autoLoadEntities: false,
+      autoLoadEntities: true,
+      entities: [Course],
       synchronize: true,
     }),
   ],

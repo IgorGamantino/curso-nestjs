@@ -1,61 +1,57 @@
 import { HttpException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
+import { Repository } from 'typeorm';
 import { CreateCourseDto } from './dto/create.course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course } from './entities/course.entity';
 
 @Injectable()
 export class CoursesService {
-  private courses: Course[] = [
-    {
-      id: '1',
-      name: 'NestJS Course 1',
-      description: 'NestJS with TypeScript',
-      tags: ['nestjs', 'nodejs', 'TypeScript'],
-    },
-  ];
+  constructor(
+    @InjectRepository(Course) private courseRepository: Repository<Course>,
+  ) { }
 
-  findAll(): Course[] {
-    return this.courses;
+  async findAll(): Promise<Course[]> {
+    return await this.courseRepository.find();
   }
 
-  findOne(id: string): Course {
-    const courseExists = this.courses.find((course) => course.id === id);
+  async findOne(id: string): Promise<Course> {
+    const courseExists = await this.courseRepository.findOneBy({ id });
 
     if (!courseExists) throw new HttpException('Course not found', 404);
 
     return courseExists;
   }
 
-  create(course: CreateCourseDto) {
+  async create(course: CreateCourseDto) {
     const newCourse = {
       id: randomUUID(),
       ...course,
     };
 
-    console.log(newCourse);
-
-    this.courses.push(newCourse);
+    await this.courseRepository.save(newCourse);
   }
 
-  update(id: string, course: UpdateCourseDto) {
-    const index = this.courses.findIndex((course) => course.id === id);
+  async update(id: string, course: UpdateCourseDto) {
+    const courseExists = await this.courseRepository.findOneBy({ id });
 
-    if (index < 0) throw new HttpException('Course not found', 404);
+    if (!courseExists) throw new HttpException('Course not found', 404);
 
-    this.courses[index] = {
+    const updateCourse = {
       id,
-      description: course.description || this.courses[index].description,
-      name: course.name || this.courses[index].name,
-      tags: course.tags || this.courses[index].tags,
+      description: course.description || courseExists.description,
+      name: course.name || courseExists.name,
+      tags: course.tags || courseExists.tags,
     };
+
+    await this.courseRepository.update(id, updateCourse);
   }
 
-  delete(id: string) {
-    const index = this.courses.findIndex((course) => course.id === id);
+  async delete(id: string) {
+    const index = await this.courseRepository.findOneBy({ id });
+    if (index) throw new HttpException('Course not found', 404);
 
-    if (index < 0) throw new HttpException('Course not found', 404);
-
-    this.courses.splice(index, 1);
+    await this.courseRepository.delete(id);
   }
 }
